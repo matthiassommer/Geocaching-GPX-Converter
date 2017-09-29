@@ -1,0 +1,26 @@
+#*******************************************
+# MacDescription = Set the corrected coordindates flag on ALL caches in the current database
+# MacFileName =SetCorrectedFlag.gsk
+# MacAuthor = Kai Team
+# MacVersion=2.0
+#*******************************************
+MACROFLAG Type=Clear Range=All
+GOTO Position=Top
+TRANSACTION Action=Begin
+WHILE NOT($_EOL)
+    IF Not($d_HasCorrected)
+    	MACROFLAG Type=Set Range=1
+        $Lat=$d_Latitude
+        $Lon=$d_Longitude
+        TABLE Active=Corrected Scope=Parent
+        ADDNEW
+        $d_kAfterLat=$Lat
+        $d_kAfterLon=$Lon
+        TABLE Active=Caches
+    ENDIF
+    GOTO Position=Next
+ENDWHILE
+MFILTER WHERE=MACROFLAG
+#$status = sqlite("sql","Update Corrected Set kType='gui' WHERE kCode IN(Select Code from Caches  WHERE RowID IN(Select * From GridTemp))")
+TRANSACTION Action=END
+RESYNC

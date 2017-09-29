@@ -1,0 +1,274 @@
+#*******************************************
+# MacDescription =Add Corrected Coordinates to Geocaching.com online cache page
+# MacFileName =CorrectedCoord2GCcom.gsk
+# MacAuthor = Kai Team
+# MacVersion=3.3
+#*******************************************
+$NotUpdatedList="Code;Name;Message" + $_CrLf
+$SettingsFile=SlashAdd($_AppData) + "Macros\CorrectedCoord2GCcom.xml"
+$CreateCustomField=TRUE
+$UploadNotes=FALSE
+$AppendNote=FALSE
+
+MACSETTINGS Type=R File=CorrectedCoord2GCcom.xml FileCheck=N
+
+IF Not(FileExists($SettingsFile)) OR $_ShiftKey
+    WHILE TRUE
+        $FormExit = form($Form1,"")
+        BEGINCASE
+            CASE $FormExit = "SystemExit"
+            RETURN Msg="Macro Canceled"
+
+            CASE $FormExit = "OK"
+            MACSETTINGS Type=S Vars=CreateCustomField,UploadNotes,Copy2Notes,AppendNote File=CorrectedCoord2GCcom.xml
+            GOSUB Name=Run
+            BREAK
+
+            CASE $FormExit = "Cancel"
+            RETURN Msg="Macro Canceled"
+        ENDCASE
+    ENDWHILE
+ELSE
+    GOSUB Name=RUN
+ENDIF
+
+BEGINSUB Name=Run
+    IF $CreateCustomField
+        $_sql="PRAGMA table_info(Custom)"
+        $CustomCol=Sqlite("sql",$_sql)
+        IF At(";CorOnline;",$CustomCol)=0
+            $Status=CustomConfig("Add","CorOnline,Boolean,Global,,,,,")
+        ENDIF
+    ENDIF
+
+    IF $_FilterActive
+        $Count=$_Count
+        $TotalCount=$_Count
+        $ThisCoord=1
+        GOTO Position=Top
+        WHILE NOT($_EOL)
+            IF $d_HasCorrected
+                SHOWSTATUS Msg="Update $ThisCoord of $TotalCount - uploading coordinates for $d_Code $d_Name." Width=500
+                GOSUB Name=UploadCoord
+                IF $Copy2Notes
+                    GOSUB Name=CopyCordToNotes
+                ENDIF
+                IF $UploadNotes
+                    GOSUB Name=UploadNotes
+                ENDIF
+
+                IF $CreateCustomField
+                    GOSUB Name=UpdateCustField
+                ENDIF
+            ENDIF
+            DELAY MS=2005
+            GOTO Position=Next
+            $ThisCoord=$ThisCoord + 1
+        ENDWHILE
+    ELSE
+        $Count=1
+        IF $d_HasCorrected
+            GOSUB Name=UploadCoord
+            IF $Copy2Notes
+                GOSUB Name=CopyCordToNotes
+            ENDIF
+            IF $UploadNotes
+                GOSUB Name=UploadNotes
+            ENDIF
+            IF $CreateCustomField
+                GOSUB Name=UpdateCustField
+            ENDIF
+        ENDIF
+    ENDIF
+    RESYNC
+    IF $_MacroLevel=1
+        SHOWSTATUS Msg=Done Display=Off
+        MSGOK Msg=$Count corrected coordinates uploaded to Geocaching.com online cache page
+
+        IF $NotUpdatedList<>"Code;Name;Message" + $_CrLf
+            $Display=SqlToHtml($NotUpdatedList,"These caches were not updated for the reason shown in the Message column","Y")
+        ENDIF
+    ENDIF
+ENDSUB
+
+BEGINSUB Name=UploadCoord
+    $Latitude=$d_Latitude
+    $Longitude=$d_Longitude
+    $AddWaypoint=RegExReplace("~~Code~~",$AddWaypoint,$d_Code)
+    $AddWaypoint=RegExReplace("~~Latitude~~",$AddWaypoint,$Latitude)
+    $AddWaypoint=RegExReplace("~~Longitude~~",$AddWaypoint,$Longitude)
+    $Action=GcApi("SaveUserWaypoint",$AddWaypoint)
+    IF $_GcApiError
+        MSGOK msg=$Action
+        $NotUpdatedList=$NotUpdatedList + $d_Code + ";" + $d_Name + ";" + $GCStatusMsg + $_CrLf
+        $Count=$Count-1
+    ENDIF
+    GOSUB Name=ProcessAPIMsg
+    #Reset variable for next cache
+    $AddWaypoint=RegExReplace($d_Code,$AddWaypoint,"~~Code~~")
+    $AddWaypoint=RegExReplace($Latitude,$AddWaypoint,"~~Latitude~~")
+    $AddWaypoint=RegExReplace($Longitude,$AddWaypoint,"~~Longitude~~")
+ENDSUB
+
+BEGINSUB Name=CopyCordToNotes
+    IF Not(RegEx("~\*Corrected\sCoordinates:.*?\*~",$d_UserNote))
+        TRANSACTION Action=Begin
+        $_sql="Update cachememo SET UserNote=COALESCE('~*Corrected Coordinates: '||"
+        $_sql=$_sql + "(Select g_LatLonFormat(kAfterLat,'latm') FROM Corrected WHERE kCode=CacheMemo.code)||g_chr(32)||"
+        $_sql=$_sql + "(Select g_LatLonFormat(kAfterLon,'lonm') FROM Corrected WHERE kCode=CacheMemo.code)"
+        $_sql=$_sql + "||'*~'||g_Chr(13)||g_Chr(10)||UserNote,'~*Corrected Coordinates: *~') WHERE code='$d_Code'"
+        $Status=Sqlite("sql",$_sql)
+        TRANSACTION Action=End
+    ENDIF
+ENDSUB
+
+BEGINSUB Name=UploadNotes
+    $ThisUserNote=Extract($d_UserNote,"$~",1)
+    IF $AppendNote AND $d_GcNote<>""
+        $ThisUserNote=$ThisUserNote + $_CrLf + $d_GcNote
+    ENDIF
+    $PCN=RegExReplace("~~Code~~",$PCN,$d_Code)
+    $PCN=RegExReplace("~~Note~~",$PCN,$ThisUserNote)
+    $data = gcapi("UpdateCacheNote",$PCN)
+    $PCN=RegExReplace($d_Code,$PCN,"~~Code~~")
+    $PCN=RegExReplace("(?s)<Note>.*?</Note>",$PCN,"<Note>~~Note~~</Note>")
+ENDSUB
+
+BEGINSUB Name=UpdateCustField
+    TRANSACTION Action=Begin
+    $Status=Sqlite("sql","Update Custom Set CorOnline=1 WHERE cCode='$d_Code'")
+
+    IF $StatusMsg="2" or $StatusMsg="12"
+        $Status=Sqlite("sql","Update Custom Set CorOnline=0 WHERE cCode='$d_Code'")
+    ENDIF
+    TRANSACTION Action=End
+ENDSUB
+
+BEGINSUB Name=ProcessAPIMsg
+    $_sql="Select Data From gcapi where Key='/SaveUserWaypointResponse/Status/StatusCode'"
+    $StatusMsg=Sqlite("sql",$_sql)
+    $_sql="Select Data From gcapi where Key='/SaveUserWaypointResponse/Status/StatusMessage'"
+    $GCStatusMsg=Sqlite("sql",$_sql)
+    BEGINCASE
+    CASE $StatusMsg="155" #Already has online corrected coordinates
+        $NotUpdatedList=$NotUpdatedList + $d_Code + ";" + $d_Name + ";" + $GCStatusMsg + $_CrLf
+        $Count=$Count-1
+    CASE $StatusMsg="2" #not authorized
+        CANCEL Msg=Geocaching.com API error: Not Authorized.  If a Premium Member, go to Geocaching.com Access>Get Antoher Access Token.  You cannot use this feature as a Basic Mamber.
+    CASE $StatusMsg="12" #Bad Code
+        $NotUpdatedList=$NotUpdatedList + $d_Code + ";" + $d_Name + ";" + $GCStatusMsg + $_CrLf
+        $Count=$Count-1
+    ENDCASE
+ENDSUB
+
+<Data> VarName=$form1
+#********************************************************************
+# Form generated by GSAK form designer on Thu 18-May-2017 14:15:18
+#********************************************************************
+
+Name = Form1
+  Type = Form
+  Height = 267
+  Width = 500
+  Caption=Options
+
+Name = Groupbox1
+  Type = Groupbox
+  Color = 15000804
+  Height = 73
+  Left = 12
+  Top = 74
+  Width = 463
+  Taborder = 6
+  Caption = Personal Cache Note Options
+
+Name = OK
+  Type = Button
+  Height = 25
+  Left = 119
+  Top = 167
+  Width = 75
+  Taborder = 2
+  Caption = OK
+
+Name = Cancel
+  Type = Button
+  Height = 25
+  Left = 290
+  Top = 167
+  Width = 75
+  Taborder = 3
+  Caption = Cancel
+
+Name = UploadNotes
+  Type = Checkbox
+  Color = 15000804
+  Container = Groupbox1
+  Fontsize = 10
+  Height = 20
+  Left = 9
+  Top = 18
+  Width = 451
+  Taborder = 0
+  Caption = Also upload GSAK user notes to Geocaching.com Personal Cache Note
+
+Name = CreateCustomField
+  Type = Checkbox
+  Fontsize = 10
+  Height = 20
+  Left = 18
+  Top = 12
+  Width = 469
+  Taborder = 4
+  Caption = Create Custom Field and mark caches whose coordinates were uploaded
+
+Name = Copy2Notes
+  Type = Checkbox
+  Fontsize = 10
+  Height = 20
+  Left = 18
+  Top = 42
+  Width = 445
+  Taborder = 5
+  Caption = Copy Corrected Coordinates to GSAK user note
+
+Name = Label1
+  Type = Label
+  Color = 198
+  Height = 17
+  Left = 45
+  Size = 10
+  Top = 211
+  Width = 401
+  Caption = Hold down the Shift key when starting the macro to display this form
+
+Name = AppendNote
+  Type = Checkbox
+  Container = Groupbox1
+  Height = 20
+  Left = 24
+  Top = 43
+  Width = 345
+  Taborder = 1
+  Caption = Append to existing note, if that note exists in GSAK's GCNotes field
+
+<enddata>
+
+<Data> VarName=$AddWaypoint
+    <SaveUserWaypointRequest xmlns="http://www.geocaching.com/Geocaching.Live/data">
+      <AccessToken>{ACCESSTOKEN}</AccessToken>
+      <CacheCode>~~Code~~</CacheCode>
+      <Latitude>~~Latitude~~</Latitude>
+      <Longitude>~~Longitude~~</Longitude>
+      <Description>GSAK Corrected Coordinates</Description>
+      <IsCorrectedCoordinate>true</IsCorrectedCoordinate>
+    </SaveUserWaypointRequest>
+<enddata>
+
+<Data> Varname=$PCN
+<UpdateCacheNoteRequest xmlns="http://www.geocaching.com/Geocaching.Live/data">
+ <AccessToken>{ACCESSTOKEN}</AccessToken>
+<CacheCode>~~Code~~</CacheCode>
+ <Note>~~Note~~</Note>
+</UpdateCacheNoteRequest>
+<enddata>
