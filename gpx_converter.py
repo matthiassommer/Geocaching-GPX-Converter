@@ -3,16 +3,16 @@ Created on Sun Sep 24 2017
 
 @author: Matthias Sommer
 
-minimal gpx:
+Minimal gpx file format:
 <gpx>
   <wpt lat="43.261417" lon="16.653483"><name>GC4EJAZ</name></wpt>
 </gpx>
 
-Input:
+Row input:
 GC10020;N33° 41.876;W117° 57.297;
 
-Output:
-<wpt lat="33.697933" lon="117.954950"><name>GC10020</name></wpt>
+Converted row output:
+<wpt lat="33.697933" lon="-117.954950"><name>GC10020</name></wpt>
 """
 
 import csv
@@ -29,25 +29,28 @@ for row in reader:
     lat = row[-2]
     lon = row[-1]
     
-    # get minutes and degree from lat / lon
-    splitLat = re.split('[NSEW°\ "]+', lat)
+    # get minutes and degree from lat, e.g. N33° 41.876
+    splitLat = re.split('[NS°\ "]+', lat)
     latDeg = splitLat[1]
     latMin = splitLat[2]
     
-    splitLon = re.split('[NSEW°\ "]+', lon)
+    # get minutes and degree from lon, e.g. W117° 57.297
+    splitLon = re.split('[EW°\ "]+', lon)
+    # degree is 117
     lonDeg = splitLon[1]
+    # minutes is 57.297
     lonMin = splitLon[2]
 
-    # convert to decimal minutes to decimal degrees: degree + minutes/60, e.g. 43+(15.685/60)
+    # convert decimal minutes to decimal degrees: degree + minutes/60, e.g. 33+(41.876/60)
     convertedLat = int(latDeg) + float(latMin)/60
     if ('S' in lat):
-        convertedLat = convertedLat *(-1);
+        convertedLat = convertedLat *(-1)
     
     convertedLon = int(lonDeg) + float(lonMin)/60
     if ('W' in lon):
-        convertedLon = convertedLon * (-1);
+        convertedLon = convertedLon * (-1)
     
-    # build row to append to gpx, e.g. <wpt lat="43.261417" lon="16.653483"><name>GC4EJAZ</name></wpt>
+    # build row and append to gpx, e.g. <wpt lat="33.697933" lon="-117.954950"><name>GC10020</name></wpt>
     convertedRow = '<wpt lat="' + str(convertedLat) +'" lon="' + str(convertedLon) + '"><name>' + gccode + '</name></wpt>'
     gpxFile += convertedRow
 
