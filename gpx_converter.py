@@ -1,6 +1,4 @@
 """
-Created on Sun Sep 24 2017
-
 @author: Matthias Sommer
 
 Minimal gpx file format:
@@ -8,10 +6,10 @@ Minimal gpx file format:
   <wpt lat="43.261417" lon="16.653483"><name>GC4EJAZ</name></wpt>
 </gpx>
 
-Row input:
+Example input:
 GC10020;N33° 41.876;W117° 57.297;
 
-Converted row output:
+Converted output:
 <wpt lat="33.697933" lon="-117.954950"><name>GC10020</name></wpt>
 """
 
