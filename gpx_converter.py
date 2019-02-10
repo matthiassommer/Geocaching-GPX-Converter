@@ -17,7 +17,7 @@ import csv
 import re
 
 # read csv file
-filename = 'data/barny_01_19.csv'
+filename = 'example_input.csv'
 input_file = open('data/' + filename, mode='r', encoding='utf-8-sig')
 reader = csv.reader(input_file, delimiter=';')
 
