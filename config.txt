@@ -1,4 +1,3 @@
 [config]
-folder = data/
-filename = example_input
-fileExt = .csv
+input = data/example_input.csv
+delimiter = ;
