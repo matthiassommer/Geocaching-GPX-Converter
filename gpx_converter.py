@@ -1,11 +1,13 @@
 import csv
 import re
+import config_reader
 
+# RegEx for a valid GC code
 gccodeRegExp = re.compile(r'^(GC|gc|Gc|gC)[a-zA-Z0-9]{2,6}$')
 
 def convert2Gpx(filePath):
   input_file = open(filePath, mode='r', encoding='utf-8-sig')
-  reader = csv.reader(input_file, delimiter=';')
+  reader = csv.reader(input_file, delimiter=config_reader.delimiter)
 
   output = '<?xml version="1.0" encoding="utf-8"?>\n<gpx xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0" creator="Groundspeak Pocket Query" xsi:schemaLocation="http://www.topografix.com/GPX/1/0 http://www.topografix.com/GPX/1/0/gpx.xsd http://www.groundspeak.com/cache/1/0/1 http://www.groundspeak.com/cache/1/0/1/cache.xsd" xmlns="http://www.topografix.com/GPX/1/0">\n'
 

@@ -1,11 +1,14 @@
 import configparser 
 
+inputFile = None
+delimiter = None
+
 def readConfig():
     configParser = configparser.RawConfigParser()   
     configParser.read_file(open(r'config.txt'))
 
-    folder = configParser.get('config', 'folder')
-    filename = configParser.get('config', 'filename')
-    fileExt = configParser.get('config', 'fileExt')
+    global inputFile
+    inputFile = configParser.get('config', 'input')
 
-    return folder, filename, fileExt
+    global delimiter
+    delimiter = configParser.get('config', 'delimiter')

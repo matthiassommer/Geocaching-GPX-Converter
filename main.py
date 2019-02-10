@@ -19,12 +19,9 @@ import file_writer
 
 class GpxConverter(object):
   def run(self):
-    folder, filename, fileExt = config_reader.readConfig()
-
-    filePath = folder + filename + fileExt
-    converted = gpx_converter.convert2Gpx(filePath)
-    
-    file_writer.writeToFile(folder, filename, converted)
+    config_reader.readConfig()
+    converted = gpx_converter.convert2Gpx(config_reader.inputFile)
+    file_writer.writeToFile(config_reader.inputFile, converted)
 
 if __name__ == '__main__':
   GpxConverter().run()
