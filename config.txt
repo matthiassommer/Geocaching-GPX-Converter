@@ -1,4 +1,4 @@
 [config]
-inputFolder = data/
+folder = data/
 filename = example_input
 fileExt = .csv

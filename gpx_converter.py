@@ -17,72 +17,88 @@ import csv
 import re
 import configparser 
 
-# read csv file
-configParser = configparser.RawConfigParser()   
-configParser.read_file(open(r'config.txt'))
-
-inputFolder = configParser.get('config', 'inputFolder')
-filename = configParser.get('config', 'filename')
-fileExt = configParser.get('config', 'fileExt')
-
-input_file = open(inputFolder + filename + fileExt, mode='r', encoding='utf-8-sig')
-reader = csv.reader(input_file, delimiter=';')
-
 gccodeRegExp = re.compile(r'^(GC|gc|Gc|gC)[a-zA-Z0-9]{2,6}$')
+inputFolder = None
+filename = None
+fileExt = None
 
-output = '<?xml version="1.0" encoding="utf-8"?>\n<gpx xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0" creator="Groundspeak Pocket Query" xsi:schemaLocation="http://www.topografix.com/GPX/1/0 http://www.topografix.com/GPX/1/0/gpx.xsd http://www.groundspeak.com/cache/1/0/1 http://www.groundspeak.com/cache/1/0/1/cache.xsd" xmlns="http://www.topografix.com/GPX/1/0">\n'
+def readConfig():
+  configParser = configparser.RawConfigParser()   
+  configParser.read_file(open(r'config.txt'))
 
-rows_converted = 0
-rows_total = 0
+  folder = configParser.get('config', 'folder')
+  filename = configParser.get('config', 'filename')
+  fileExt = configParser.get('config', 'fileExt')
 
-## Convert file to GPX format
-for row in reader:  
-    rows_total += 1
+  return folder, filename, fileExt
 
-    gccode = row[0]
-    validCode = gccodeRegExp.match(gccode)
-    if (not validCode): 
-      print ("Invalid entry: ", gccode)
-      continue
+def convert2Gpx(folder, filename, fileExt):
+  input_file = open(folder + filename + fileExt, mode='r', encoding='utf-8-sig')
+  reader = csv.reader(input_file, delimiter=';')
 
-    lat = row[-2]
-    lon = row[-1]
-    
-    # get minutes and degree from lat, e.g. N33° 41.876
-    splitLat = re.split('[NS°\ "]+', lat)
-    latDeg = splitLat[1]
-    latMin = splitLat[2]
-    
-    # get minutes and degree from lon, e.g. W117° 57.297
-    splitLon = re.split('[EW°\ "]+', lon)
-    # degree is 117
-    lonDeg = splitLon[1]
-    # minutes is 57.297
-    lonMin = splitLon[2]
+  output = '<?xml version="1.0" encoding="utf-8"?>\n<gpx xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0" creator="Groundspeak Pocket Query" xsi:schemaLocation="http://www.topografix.com/GPX/1/0 http://www.topografix.com/GPX/1/0/gpx.xsd http://www.groundspeak.com/cache/1/0/1 http://www.groundspeak.com/cache/1/0/1/cache.xsd" xmlns="http://www.topografix.com/GPX/1/0">\n'
 
-    # convert decimal minutes to decimal degrees: degree + minutes/60, e.g. 33+(41.876/60)
-    convertedLat = int(latDeg) + float(latMin)/60
-    if ('S' in lat):
-        convertedLat = convertedLat * (-1)
-    
-    convertedLon = int(lonDeg) + float(lonMin)/60
-    if ('W' in lon):
-        convertedLon = convertedLon * (-1)
-    
-    # build row and append to gpx, e.g. <wpt lat="33.697933" lon="-117.954950"><name>GC10020</name></wpt>
-    convertedRow = '<wpt lat="' + "{0:.6f}".format(convertedLat) +'" lon="' + "{0:.6f}".format(convertedLon) + '"><name>' + gccode + '</name></wpt>\n'
-    output += convertedRow
+  rows_converted = 0
+  rows_total = 0
 
-    rows_converted += 1
+  for row in reader:  
+      rows_total += 1
 
-input_file.close()
+      gccode = row[0]
+      validCode = gccodeRegExp.match(gccode)
+      if (not validCode): 
+        print ("Invalid entry: ", gccode)
+        continue
 
-output += '</gpx>'
+      lat = row[-2]
+      lon = row[-1]
+      
+      # get minutes and degree from lat, e.g. N33° 41.876
+      splitLat = re.split('[NS°\ "]+', lat)
+      latDeg = splitLat[1]
+      latMin = splitLat[2]
+      
+      # get minutes and degree from lon, e.g. W117° 57.297
+      splitLon = re.split('[EW°\ "]+', lon)
+      # degree is 117
+      lonDeg = splitLon[1]
+      # minutes is 57.297
+      lonMin = splitLon[2]
 
-print('Imported rows ', rows_total)
-print('Converted rows ', rows_converted)
+      # convert decimal minutes to decimal degrees: degree + minutes/60, e.g. 33+(41.876/60)
+      convertedLat = int(latDeg) + float(latMin)/60
+      if ('S' in lat):
+          convertedLat = convertedLat * (-1)
+      
+      convertedLon = int(lonDeg) + float(lonMin)/60
+      if ('W' in lon):
+          convertedLon = convertedLon * (-1)
+      
+      # build row and append to gpx, e.g. <wpt lat="33.697933" lon="-117.954950"><name>GC10020</name></wpt>
+      convertedRow = '<wpt lat="' + "{0:.6f}".format(convertedLat) +'" lon="' + "{0:.6f}".format(convertedLon) + '"><name>' + gccode + '</name></wpt>\n'
+      output += convertedRow
 
-#  write to file
-gpx_output_file = open(inputFolder + filename + ".gpx", "w")
-gpx_output_file.write(output)
-gpx_output_file.close()
+      rows_converted += 1
+
+  input_file.close()
+
+  output += '</gpx>'
+
+  print('Imported rows ', rows_total)
+  print('Converted rows ', rows_converted)
+
+  return output
+
+def writeToFile(folder, filename, output):
+  gpx_output_file = open(folder + filename + ".gpx", "w")
+  gpx_output_file.write(output)
+  gpx_output_file.close()
+
+class GpxConverter(object):
+  def run(self):
+    folder, filename, fileExt = readConfig()
+    converted = convert2Gpx(folder, filename, fileExt)
+    writeToFile(folder, filename, converted)
+
+if __name__ == '__main__':
+  GpxConverter().run()
