@@ -32,7 +32,7 @@ Download and install [GSAK](http://www.gsak.net)
 ### Install macros
 Install these two macros in GSAK: [SetCorrectedFlag](http://gsak.net/board/index.php?showtopic=31875&st=0&#entry239020) and [CorrectedCoord2GCcom](http://gsak.net/board/index.php?s=84bf3b6d3d9508f637d2d5000a5d6163&showtopic=32407). Both can be found under gsak-scripts.
 
-In GSAK, go to `Macro -> Execute -> Install` or press CTRL+M -> Install. Select a gsk file and click install. Repeat for the second macro.
+In GSAK, go to `Macro -> Execute -> Install` or press `CTRL+M -> Install`. Select a .gsk file and click install. Repeat for the second macro.
 
 
 ### Upload with GSAK
@@ -51,4 +51,4 @@ docker run gpx-converter
 
 
 # Support
-If this saved you some time, may want to [support me](https://www.paypal.me/SommerMatthias/5).
+If this saved you some time, you may want to [support me](https://www.paypal.me/SommerMatthias/5).
