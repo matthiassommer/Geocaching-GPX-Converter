@@ -2,3 +2,4 @@
 /.vscode
 
 !/data/example_input.csv
+!/data/example_input.gpx
