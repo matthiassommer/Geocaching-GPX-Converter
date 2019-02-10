@@ -1,5 +1,5 @@
 """
-@author: Matthias Sommer
+@author: Matthias Sommer, www.matthiassommer.it
 
 Minimal gpx file format:
 <gpx>
@@ -17,18 +17,22 @@ import csv
 import re
 
 # read csv file
-file = open('data/barny_01_19.csv', mode='r', encoding='utf-8-sig')
-reader = csv.reader(file, delimiter=';')
+filename = 'barny_01_19.csv'
+input_file = open('data/' + filename, mode='r', encoding='utf-8-sig')
+reader = csv.reader(input_file, delimiter=';')
+
+row_count = sum(1 for row in reader)
+print("Imported rows: ", row_count)
 
 gccodeRegExp = re.compile(r'^(GC|gc|Gc|gC)[a-zA-Z0-9]{2,6}$')
 
-gpxFile = '<?xml version="1.0" encoding="utf-8"?>\n<gpx xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0" creator="Groundspeak Pocket Query" xsi:schemaLocation="http://www.topografix.com/GPX/1/0 http://www.topografix.com/GPX/1/0/gpx.xsd http://www.groundspeak.com/cache/1/0/1 http://www.groundspeak.com/cache/1/0/1/cache.xsd" xmlns="http://www.topografix.com/GPX/1/0">\n'
+output = '<?xml version="1.0" encoding="utf-8"?>\n<gpx xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0" creator="Groundspeak Pocket Query" xsi:schemaLocation="http://www.topografix.com/GPX/1/0 http://www.topografix.com/GPX/1/0/gpx.xsd http://www.groundspeak.com/cache/1/0/1 http://www.groundspeak.com/cache/1/0/1/cache.xsd" xmlns="http://www.topografix.com/GPX/1/0">\n'
 
 for row in reader:  
     gccode = row[0]
     validCode = gccodeRegExp.match(gccode)
     if (not validCode): 
-      print (gccode)
+      print ("Invalid entry: ", gccode)
       continue
 
     lat = row[-2]
@@ -57,13 +61,13 @@ for row in reader:
     
     # build row and append to gpx, e.g. <wpt lat="33.697933" lon="-117.954950"><name>GC10020</name></wpt>
     convertedRow = '<wpt lat="' + "{0:.6f}".format(convertedLat) +'" lon="' + "{0:.6f}".format(convertedLon) + '"><name>' + gccode + '</name></wpt>\n'
-    gpxFile += convertedRow
+    output += convertedRow
 
-file.close()
+input_file.close()
 
-gpxFile += '</gpx>'
+output += '</gpx>'
 
 #  write to file
-text_file = open(".\\barny_01_19_test.gpx", "w")
-text_file.write(gpxFile)
-text_file.close()
+gpx_output_file = open(".\\"+ filename + ".gpx", "w")
+gpx_output_file.write(output)
+gpx_output_file.close()
