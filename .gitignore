@@ -1,6 +1,5 @@
 .vscode
-/.vscode/*
-/src/__pycache__/
+src/__pycache__/
 
 /data/*
 !/data/example_input.csv
