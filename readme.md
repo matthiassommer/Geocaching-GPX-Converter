@@ -24,6 +24,10 @@ The python script creates a GPX file with this format
 </gpx>
 ```
 
+## Configuration
+The config.txt file contains the configuration parameters for the script. The `input` parameter specifies the relative path the input file having the raw input. The gpx output file will be saved in the same location with the same filename.
+
+The parameter `delimiter` lets you define the data delimiter. In the above example, if was a semicolon.
 
 ## Setup GSAK
 
