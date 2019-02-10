@@ -1,0 +1,4 @@
+[config]
+inputFolder = data/
+filename = example_input
+fileExt = .csv

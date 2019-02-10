@@ -15,11 +15,15 @@ Converted output:
 
 import csv
 import re
+import configparser 
 
 # read csv file
-inputFolder='data/'
-fileExt= '.csv'
-filename = 'example_input'
+configParser = configparser.RawConfigParser()   
+configParser.read_file(open(r'config.txt'))
+
+inputFolder = configParser.get('config', 'inputFolder')
+filename = configParser.get('config', 'filename')
+fileExt = configParser.get('config', 'fileExt')
 
 input_file = open(inputFolder + filename + fileExt, mode='r', encoding='utf-8-sig')
 reader = csv.reader(input_file, delimiter=';')
@@ -31,6 +35,7 @@ output = '<?xml version="1.0" encoding="utf-8"?>\n<gpx xmlns:xsd="http://www.w3.
 rows_converted = 0
 rows_total = 0
 
+## Convert file to GPX format
 for row in reader:  
     rows_total += 1
 
