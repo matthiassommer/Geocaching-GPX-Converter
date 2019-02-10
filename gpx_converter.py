@@ -17,7 +17,7 @@ import csv
 import re
 
 # read csv file
-file = open('.\\barny_01_19.csv', mode='r', encoding='utf-8-sig')
+file = open('data/barny_01_19.csv', mode='r', encoding='utf-8-sig')
 reader = csv.reader(file, delimiter=';')
 
 gccodeRegExp = re.compile(r'^(GC|gc|Gc|gC)[a-zA-Z0-9]{2,6}$')
