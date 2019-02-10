@@ -17,18 +17,23 @@ import csv
 import re
 
 # read csv file
-filename = 'example_input.csv'
-input_file = open('data/' + filename, mode='r', encoding='utf-8-sig')
-reader = csv.reader(input_file, delimiter=';')
+inputFolder='data/'
+fileExt= '.csv'
+filename = 'example_input'
 
-row_count = sum(1 for row in reader)
-print("Imported rows: ", row_count)
+input_file = open(inputFolder + filename + fileExt, mode='r', encoding='utf-8-sig')
+reader = csv.reader(input_file, delimiter=';')
 
 gccodeRegExp = re.compile(r'^(GC|gc|Gc|gC)[a-zA-Z0-9]{2,6}$')
 
 output = '<?xml version="1.0" encoding="utf-8"?>\n<gpx xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0" creator="Groundspeak Pocket Query" xsi:schemaLocation="http://www.topografix.com/GPX/1/0 http://www.topografix.com/GPX/1/0/gpx.xsd http://www.groundspeak.com/cache/1/0/1 http://www.groundspeak.com/cache/1/0/1/cache.xsd" xmlns="http://www.topografix.com/GPX/1/0">\n'
 
+rows_converted = 0
+rows_total = 0
+
 for row in reader:  
+    rows_total += 1
+
     gccode = row[0]
     validCode = gccodeRegExp.match(gccode)
     if (not validCode): 
@@ -63,11 +68,16 @@ for row in reader:
     convertedRow = '<wpt lat="' + "{0:.6f}".format(convertedLat) +'" lon="' + "{0:.6f}".format(convertedLon) + '"><name>' + gccode + '</name></wpt>\n'
     output += convertedRow
 
+    rows_converted += 1
+
 input_file.close()
 
 output += '</gpx>'
 
+print('Imported rows ', rows_total)
+print('Converted rows ', rows_converted)
+
 #  write to file
-gpx_output_file = open(".\\"+ filename + ".gpx", "w")
+gpx_output_file = open(inputFolder + filename + ".gpx", "w")
 gpx_output_file.write(output)
 gpx_output_file.close()
