@@ -1,39 +1,10 @@
-"""
-@author: Matthias Sommer, www.matthiassommer.it
-
-Minimal gpx file format:
-<gpx>
-  <wpt lat="43.261417" lon="16.653483"><name>GC4EJAZ</name></wpt>
-</gpx>
-
-Example input:
-GC10020;N33° 41.876;W117° 57.297;
-
-Converted output:
-<wpt lat="33.697933" lon="-117.954950"><name>GC10020</name></wpt>
-"""
-
 import csv
 import re
-import configparser 
 
 gccodeRegExp = re.compile(r'^(GC|gc|Gc|gC)[a-zA-Z0-9]{2,6}$')
-inputFolder = None
-filename = None
-fileExt = None
 
-def readConfig():
-  configParser = configparser.RawConfigParser()   
-  configParser.read_file(open(r'config.txt'))
-
-  folder = configParser.get('config', 'folder')
-  filename = configParser.get('config', 'filename')
-  fileExt = configParser.get('config', 'fileExt')
-
-  return folder, filename, fileExt
-
-def convert2Gpx(folder, filename, fileExt):
-  input_file = open(folder + filename + fileExt, mode='r', encoding='utf-8-sig')
+def convert2Gpx(filePath):
+  input_file = open(filePath, mode='r', encoding='utf-8-sig')
   reader = csv.reader(input_file, delimiter=';')
 
   output = '<?xml version="1.0" encoding="utf-8"?>\n<gpx xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0" creator="Groundspeak Pocket Query" xsi:schemaLocation="http://www.topografix.com/GPX/1/0 http://www.topografix.com/GPX/1/0/gpx.xsd http://www.groundspeak.com/cache/1/0/1 http://www.groundspeak.com/cache/1/0/1/cache.xsd" xmlns="http://www.topografix.com/GPX/1/0">\n'
@@ -88,17 +59,3 @@ def convert2Gpx(folder, filename, fileExt):
   print('Converted rows ', rows_converted)
 
   return output
-
-def writeToFile(folder, filename, output):
-  gpx_output_file = open(folder + filename + ".gpx", "w")
-  gpx_output_file.write(output)
-  gpx_output_file.close()
-
-class GpxConverter(object):
-  def run(self):
-    folder, filename, fileExt = readConfig()
-    converted = convert2Gpx(folder, filename, fileExt)
-    writeToFile(folder, filename, converted)
-
-if __name__ == '__main__':
-  GpxConverter().run()
