@@ -1,4 +1,4 @@
-FROM python:3.7-slim
+FROM python:3-alpine
 
 LABEL maintainer="Matthias Sommer, matthiassommer@posteo.de"
 
