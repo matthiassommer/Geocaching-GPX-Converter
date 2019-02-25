@@ -51,6 +51,10 @@ You can also use the provided Dockerfile to build and run the python script.
 ```
 docker build --rm -t gpx-converter .
 docker run gpx-converter
+
+# copy gpx to host (replace container id with the real one.)
+docker ps -a
+docker cp <containerid>:/data/example_input.gpx ./output.gpx
 ```
 
 
