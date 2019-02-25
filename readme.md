@@ -49,7 +49,7 @@ In GSAK, go to `Macro -> Execute -> Install` or press `CTRL+M -> Install`. Selec
 You can also use the provided Dockerfile to build and run the python script.
 
 ```
-docker build -t gpx-converter .
+docker build --rm -t gpx-converter .
 docker run gpx-converter
 ```
 
